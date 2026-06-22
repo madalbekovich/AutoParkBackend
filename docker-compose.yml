@@ -63,6 +63,15 @@ services:
       - web
       - ws
 
+  # Let's Encrypt — выпуск/продление SSL-сертификата.
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    # Запускается вручную для выпуска; продление — через cron/таймер (см. README).
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
 volumes:
   pgdata:
   static_volume:
