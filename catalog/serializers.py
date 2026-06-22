@@ -38,9 +38,21 @@ class GenerationSerializer(serializers.ModelSerializer):
 
 
 class ListingPhotoSerializer(serializers.ModelSerializer):
+    # Единый URL фото: внешний (импорт) или загруженный файл, всегда абсолютный.
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = ListingPhoto
         fields = ("id", "image", "order")
+
+    def get_image(self, obj):
+        url = obj.url
+        if not url:
+            return None
+        if url.startswith("http"):
+            return url
+        request = self.context.get("request")
+        return request.build_absolute_uri(url) if request else url
 
 
 class ListingSerializer(serializers.ModelSerializer):

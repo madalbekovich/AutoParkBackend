@@ -108,7 +108,10 @@ class ListingViewSet(viewsets.ModelViewSet):
             return qs.filter(seller=self.request.user)
         # Публичный список — только активные.
         if self.action == "list":
-            return qs.filter(status=Listing.Status.ACTIVE)
+            qs = qs.filter(status=Listing.Status.ACTIVE)
+            # ?shuffle=1 — перемешать типы (на главной не идут блоком одни «special»).
+            if self.request.query_params.get("shuffle"):
+                return qs.order_by("?")
         return qs
 
     @action(detail=True, methods=["post"], url_path="upload-photos")
