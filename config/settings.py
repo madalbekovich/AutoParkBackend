@@ -34,6 +34,16 @@ ALLOWED_HOSTS = env("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
 if DEBUG:
     ALLOWED_HOSTS = ["*"]
 
+# --- За обратным прокси (Nginx) ---
+# Nginx передаёт X-Forwarded-Proto — чтобы Django знал, что соединение по HTTPS.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# Домены, которым доверяем для CSRF (админка по HTTPS). Берётся из .env.
+CSRF_TRUSTED_ORIGINS = [
+    o.strip()
+    for o in env("CSRF_TRUSTED_ORIGINS", "https://api.autopark-app.com").split(",")
+    if o.strip()
+]
+
 
 # Application definition
 INSTALLED_APPS = [
@@ -62,6 +72,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # отдаёт статику без nginx (фолбэк)
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -161,7 +172,8 @@ if USE_S3:
 
     STORAGES = {
         "default": {"BACKEND": "storages.backends.s3.S3Storage"},
-        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+        # Статика админки — локально (whitenoise со сжатием + хэшем), медиа на R2.
+        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
     }
 
     # MEDIA_URL для построения абсолютных ссылок (через CDN или endpoint бакета).

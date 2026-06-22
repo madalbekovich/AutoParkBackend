@@ -1,0 +1,73 @@
+# Auto Park backend — production-стек.
+# Nginx → Gunicorn (HTTP API) и Daphne (WebSocket-чат). Postgres в контейнере.
+# Медиа (фото) хранится в Cloudflare R2 (см. .env / settings.py).
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-autopark}
+      POSTGRES_USER: ${DB_USER:-autopark}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-autopark}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API (HTTP) — Gunicorn (WSGI). Синхронные DRF-вьюхи.
+  web:
+    build: .
+    restart: unless-stopped
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application
+             --bind 0.0.0.0:8000 --workers 3 --timeout 60
+             --access-logfile - --error-logfile -"
+    env_file: .env
+    environment:
+      DB_HOST: db
+    volumes:
+      - static_volume:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "8000"
+
+  # WebSocket (чат) — Daphne (ASGI).
+  ws:
+    build: .
+    restart: unless-stopped
+    command: daphne -b 0.0.0.0 -p 9000 config.asgi:application
+    env_file: .env
+    environment:
+      DB_HOST: db
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "9000"
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - static_volume:/app/staticfiles:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      - web
+      - ws
+
+volumes:
+  pgdata:
+  static_volume:
