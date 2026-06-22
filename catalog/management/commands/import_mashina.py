@@ -103,6 +103,8 @@ class Command(BaseCommand):
 
         # Бренд: первое слово из title (Lexus, Toyota…) → матчим/создаём.
         brand = self._brand_for(it, vtype)
+        # Модель: ищем среди моделей этой марки по названию в title.
+        car_model = self._model_for(brand, it.get("title", ""))
 
         year = attr(attrs, "year")
         mileage = attr(attrs, "mileage")
@@ -121,6 +123,7 @@ class Command(BaseCommand):
             "price": price,
             "currency": currency,
             "brand": brand,
+            "car_model": car_model,
             "vehicle_type": vtype,
             "year": int(year) if year else None,
             "mileage": mileage_num,
@@ -150,13 +153,31 @@ class Command(BaseCommand):
         return True
 
     def _brand_for(self, it, vtype):
-        """Бренд по первому слову title; создаём при отсутствии."""
-        title = it.get("title", "")
-        # «Продажа Lexus LX …» → берём слово после «Продажа».
-        words = [w for w in title.replace("Продажа", "").split() if w]
+        """Бренд: сначала ищем существующий по началу title (учитывая
+        составные «Mercedes-Benz»), иначе создаём по первому слову."""
+        title = it.get("title", "").replace("Продажа", "").strip()
+        # Среди уже импортированных марок ищем ту, с которой начинается title.
+        for brand in Brand.objects.all():
+            if title.lower().startswith(brand.name.lower()):
+                return brand
+        words = [w for w in title.split() if w]
         name = words[0] if words else "Прочее"
         slug = slugify(name) or "brand"
         brand, _ = Brand.objects.get_or_create(
             slug=slug, defaults={"name": name, "vehicle_type": vtype}
         )
         return brand
+
+    def _model_for(self, brand, title):
+        """Модель марки: ищем самое длинное совпадение названия модели в title."""
+        rest = title.replace("Продажа", "").strip()
+        # Убираем имя марки из начала.
+        if rest.lower().startswith(brand.name.lower()):
+            rest = rest[len(brand.name):].strip()
+        rest_low = rest.lower()
+        best = None
+        for m in brand.models.all():
+            if m.name and rest_low.startswith(m.name.lower()):
+                if best is None or len(m.name) > len(best.name):
+                    best = m
+        return best

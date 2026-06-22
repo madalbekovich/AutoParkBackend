@@ -33,6 +33,7 @@ class CarModel(models.Model):
     brand = models.ForeignKey(Brand, related_name="models", on_delete=models.CASCADE)
     slug = models.SlugField("Код", max_length=80)
     name = models.CharField("Название", max_length=120)
+    external_id = models.CharField("Внешний ID", max_length=32, blank=True, db_index=True)
 
     class Meta:
         verbose_name = "Модель"
@@ -65,8 +66,10 @@ class Generation(models.Model):
     """Поколение модели (период)."""
 
     car_model = models.ForeignKey(CarModel, related_name="generations", on_delete=models.CASCADE)
-    name = models.CharField("Название", max_length=80)  # напр. "2021-2014"
+    name = models.CharField("Название", max_length=120)  # напр. "I (C1)"
     image = models.ImageField("Фото", upload_to="generations/", blank=True, null=True)
+    external_image = models.URLField("Фото (внешний URL)", max_length=500, blank=True)
+    external_id = models.CharField("Внешний ID", max_length=32, blank=True, db_index=True)
     year_from = models.PositiveIntegerField("Год от", blank=True, null=True)
     year_to = models.PositiveIntegerField("Год до", blank=True, null=True)
 
