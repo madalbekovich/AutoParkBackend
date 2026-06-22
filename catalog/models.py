@@ -157,6 +157,11 @@ class Listing(models.Model):
     specs = models.JSONField("Характеристики", default=dict, blank=True)
 
     view_count = models.PositiveIntegerField(default=0)
+
+    # Импорт из внешних источников (mashina.kg и т.п.) — для дедупликации.
+    source = models.CharField("Источник", max_length=40, blank=True)  # '' = наше, 'mashina' = импорт
+    external_id = models.CharField("Внешний ID", max_length=64, blank=True, db_index=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -175,16 +180,25 @@ class Listing(models.Model):
 
 
 class ListingPhoto(models.Model):
-    """Фото объявления."""
+    """Фото объявления (загруженный файл ИЛИ внешний URL для импорта)."""
 
     listing = models.ForeignKey(Listing, related_name="photos", on_delete=models.CASCADE)
-    image = models.ImageField(upload_to="listings/")
+    image = models.ImageField(upload_to="listings/", blank=True, null=True)
+    # Внешняя ссылка (импорт с mashina.kg) — файл не перезаливаем.
+    external_url = models.URLField("Внешний URL", max_length=500, blank=True)
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
         verbose_name = "Фото объявления"
         verbose_name_plural = "Фото объявлений"
         ordering = ["order", "id"]
+
+    @property
+    def url(self):
+        """Единый URL фото: внешний (импорт) либо загруженный файл."""
+        if self.external_url:
+            return self.external_url
+        return self.image.url if self.image else None
 
     def __str__(self):
         return f"Фото #{self.pk} → {self.listing_id}"

@@ -107,10 +107,13 @@ class ListingSerializer(serializers.ModelSerializer):
 
     def get_cover(self, obj):
         photo = obj.photos.first()
-        if not photo:
+        if not photo or not photo.url:
             return None
+        url = photo.url
+        # Внешний URL (импорт) отдаём как есть; локальный — достраиваем до абсолютного.
+        if url.startswith("http"):
+            return url
         request = self.context.get("request")
-        url = photo.image.url
         return request.build_absolute_uri(url) if request else url
 
     def get_is_favorited(self, obj):
