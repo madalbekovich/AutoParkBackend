@@ -16,12 +16,14 @@ class Brand(models.Model):
         "Тип техники", max_length=10, choices=VehicleType.choices, default=VehicleType.AUTO
     )
     logo = models.ImageField("Логотип", upload_to="brands/", blank=True, null=True)
+    is_popular = models.BooleanField("Популярная", default=False)
     order = models.PositiveIntegerField("Порядок", default=0)
 
     class Meta:
         verbose_name = "Марка"
         verbose_name_plural = "Марки"
-        ordering = ["order", "name"]
+        # Популярные → выше; затем по порядку и алфавиту.
+        ordering = ["-is_popular", "order", "name"]
 
     def __str__(self):
         return self.name
@@ -33,13 +35,15 @@ class CarModel(models.Model):
     brand = models.ForeignKey(Brand, related_name="models", on_delete=models.CASCADE)
     slug = models.SlugField("Код", max_length=80)
     name = models.CharField("Название", max_length=120)
+    is_popular = models.BooleanField("Популярная", default=False)
     external_id = models.CharField("Внешний ID", max_length=32, blank=True, db_index=True)
 
     class Meta:
         verbose_name = "Модель"
         verbose_name_plural = "Модели"
         unique_together = ("brand", "slug")
-        ordering = ["name"]
+        # Популярные → выше; затем по алфавиту.
+        ordering = ["-is_popular", "name"]
 
     def __str__(self):
         return f"{self.brand.name} {self.name}"

@@ -66,9 +66,15 @@ class Command(BaseCommand):
     def _brand(self, b):
         name = b["value"]
         slug = slugify(name) or f"brand-{b['id']}"
-        brand, _ = Brand.objects.get_or_create(
-            slug=slug, defaults={"name": name, "vehicle_type": "auto"}
+        popular = bool(b.get("is_popular"))
+        brand, created = Brand.objects.get_or_create(
+            slug=slug,
+            defaults={"name": name, "vehicle_type": "auto", "is_popular": popular},
         )
+        # Обновляем популярность даже у существующих марок.
+        if not created and brand.is_popular != popular:
+            brand.is_popular = popular
+            brand.save(update_fields=["is_popular"])
         return brand
 
     def _model(self, brand, m):
@@ -77,6 +83,10 @@ class Command(BaseCommand):
         car_model, _ = CarModel.objects.update_or_create(
             brand=brand,
             slug=slug,
-            defaults={"name": name[:120], "external_id": str(m["id"])},
+            defaults={
+                "name": name[:120],
+                "external_id": str(m["id"]),
+                "is_popular": bool(m.get("is_popular")),
+            },
         )
         return car_model

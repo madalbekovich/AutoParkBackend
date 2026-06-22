@@ -16,7 +16,7 @@ from .models import (
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Brand
-        fields = ("id", "slug", "name", "vehicle_type", "logo", "order")
+        fields = ("id", "slug", "name", "vehicle_type", "logo", "is_popular", "order")
 
 
 class BodyTypeSerializer(serializers.ModelSerializer):
@@ -28,7 +28,7 @@ class BodyTypeSerializer(serializers.ModelSerializer):
 class CarModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = CarModel
-        fields = ("id", "slug", "name", "brand")
+        fields = ("id", "slug", "name", "brand", "is_popular")
 
 
 class GenerationSerializer(serializers.ModelSerializer):

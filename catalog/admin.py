@@ -28,9 +28,9 @@ class CarModelInline(admin.TabularInline):
 
 @admin.register(Brand)
 class BrandAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "vehicle_type", "order")
-    list_filter = ("vehicle_type",)
-    list_editable = ("vehicle_type", "order")
+    list_display = ("name", "slug", "vehicle_type", "is_popular", "order")
+    list_filter = ("vehicle_type", "is_popular")
+    list_editable = ("vehicle_type", "is_popular", "order")
     prepopulated_fields = {"slug": ("name",)}
     search_fields = ("name", "slug")
     inlines = [CarModelInline]
@@ -38,8 +38,9 @@ class BrandAdmin(admin.ModelAdmin):
 
 @admin.register(CarModel)
 class CarModelAdmin(admin.ModelAdmin):
-    list_display = ("name", "brand")
-    list_filter = ("brand",)
+    list_display = ("name", "brand", "is_popular")
+    list_filter = ("brand", "is_popular")
+    list_editable = ("is_popular",)
     search_fields = ("name",)
 
 
