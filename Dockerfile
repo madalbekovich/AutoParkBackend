@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Код приложения.
 COPY . .
 
-# Статика (админка) собирается в образ; медиа идёт на R2.
-RUN python manage.py collectstatic --noinput || true
+# entrypoint должен быть исполняемым.
+RUN chmod +x entrypoint.sh
 
 EXPOSE 8000
