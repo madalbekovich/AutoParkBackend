@@ -30,8 +30,16 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     """Пользователь Auto Park (идентификатор — номер телефона)."""
 
+    class Gender(models.TextChoices):
+        MALE = "male", "Мужской"
+        FEMALE = "female", "Женский"
+
     phone = models.CharField("Телефон", max_length=20, unique=True)
     name = models.CharField("Имя", max_length=120, blank=True)
+    full_name = models.CharField("ФИО", max_length=200, blank=True)
+    email = models.EmailField("Email", blank=True)
+    gender = models.CharField("Пол", max_length=6, choices=Gender.choices, blank=True)
+    birth_date = models.DateField("Дата рождения", blank=True, null=True)
     avatar = models.ImageField("Аватар", upload_to="avatars/", blank=True, null=True)
     location = models.CharField("Город / локация", max_length=120, blank=True)
 

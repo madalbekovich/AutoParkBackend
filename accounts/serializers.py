@@ -6,7 +6,19 @@ from .models import User
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ("id", "phone", "name", "avatar", "location", "phone_verified", "push_token")
+        fields = (
+            "id",
+            "phone",
+            "name",
+            "full_name",
+            "email",
+            "gender",
+            "birth_date",
+            "avatar",
+            "location",
+            "phone_verified",
+            "push_token",
+        )
         read_only_fields = ("id", "phone", "phone_verified")
         extra_kwargs = {"push_token": {"write_only": True, "required": False}}
 
