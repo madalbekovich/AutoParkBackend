@@ -16,6 +16,8 @@ def send_push(token: str, title: str, body: str, data: dict | None = None) -> No
         "sound": "default",
         # Канал, который приложение создаёт на Android (см. lib/notifications.ts).
         "channelId": "default",
+        # High priority — чтобы FCM доставлял мгновенно и MIUI показывал баннер.
+        "priority": "high",
     }
     if data:
         payload["data"] = data
