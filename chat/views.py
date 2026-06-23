@@ -60,6 +60,35 @@ class ChatViewSet(viewsets.ModelViewSet):
         msgs = chat.messages.order_by("created_at")
         return Response(MessageSerializer(msgs, many=True).data)
 
+    @action(detail=True, methods=["post"])
+    def send(self, request, pk=None):
+        """Надёжная отправка сообщения через REST (всегда сохраняет в БД).
+
+        WebSocket используется для realtime-доставки, но если он не подключился
+        (нет прокси ws:// и т.п.), сообщение всё равно сохранится и дойдёт через
+        историю. После сохранения дублируем broadcast — подключённые получат мгновенно.
+        """
+        chat = self.get_object()
+        text = (request.data.get("text") or "").strip()
+        if not text:
+            return Response({"detail": "Пустое сообщение"}, status=status.HTTP_400_BAD_REQUEST)
+
+        msg = Message.objects.create(chat=chat, sender=request.user, text=text)
+        Chat.objects.filter(id=chat.id).update(updated_at=msg.created_at)
+        data = MessageSerializer(msg).data
+
+        # Realtime тем, кто онлайн (отправителю не навредит — фронт дедуплицирует по id).
+        broadcast(chat.id, {"type": "chat.message", "message": data})
+
+        # Push второму участнику.
+        from accounts.push import send_push
+
+        for u in chat.participants.exclude(id=request.user.id):
+            if u.push_token:
+                send_push(u.push_token, request.user.name or "Новое сообщение", text, {"chatId": chat.id})
+
+        return Response(data, status=status.HTTP_201_CREATED)
+
 
 class MessageViewSet(
     mixins.UpdateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet
