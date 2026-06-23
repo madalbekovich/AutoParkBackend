@@ -11,7 +11,7 @@ class TariffAdmin(admin.ModelAdmin):
 
 @admin.register(PaymentMethod)
 class PaymentMethodAdmin(admin.ModelAdmin):
-    list_display = ("title", "subtitle", "accent", "emblem", "is_active", "order")
+    list_display = ("title", "subtitle", "logo", "is_active", "order")
     list_editable = ("is_active", "order")
     prepopulated_fields = {"slug": ("title",)}
 

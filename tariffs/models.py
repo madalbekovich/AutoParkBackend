@@ -8,6 +8,8 @@ class PaymentMethod(models.Model):
     slug = models.SlugField(max_length=40, unique=True)
     title = models.CharField("Название", max_length=60)
     subtitle = models.CharField("Подпись", max_length=80, blank=True)
+    logo = models.ImageField("Логотип", upload_to="payments/", blank=True, null=True)
+    # Фолбэк-заглушка, если логотип не загружен: цветной кружок с буквами.
     accent = models.CharField("Цвет акцента (hex)", max_length=9, default="#1A1F71")
     emblem = models.CharField("Эмблема (текст)", max_length=10, blank=True)
     is_active = models.BooleanField("Включён", default=True)

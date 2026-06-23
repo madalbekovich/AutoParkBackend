@@ -6,10 +6,21 @@ from .models import PaymentMethod, Tariff
 class PaymentMethodSerializer(serializers.ModelSerializer):
     # id отдаём как slug, чтобы фронт-тип (id: string) совпал.
     id = serializers.CharField(source="slug", read_only=True)
+    logo = serializers.SerializerMethodField()
 
     class Meta:
         model = PaymentMethod
-        fields = ("id", "title", "subtitle", "accent", "emblem")
+        fields = ("id", "title", "subtitle", "logo", "accent", "emblem")
+
+    def get_logo(self, obj):
+        if not obj.logo:
+            return None
+        url = obj.logo.url
+        # S3/R2 (CDN) — абсолютный URL отдаём как есть; локальный — достраиваем.
+        if url.startswith("http"):
+            return url
+        request = self.context.get("request")
+        return request.build_absolute_uri(url) if request else url
 
 
 class TariffSerializer(serializers.ModelSerializer):
