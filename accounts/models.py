@@ -61,6 +61,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.name or self.phone
 
+    @property
+    def display_name(self) -> str:
+        """Имя для показа (в т.ч. в push-уведомлениях): ФИО → имя → телефон."""
+        return self.full_name or self.name or self.phone
+
 
 class OTPCode(models.Model):
     """Одноразовый код подтверждения телефона (регистрация/вход)."""

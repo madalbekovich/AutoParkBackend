@@ -86,7 +86,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             if u.push_token:
                 send_push(
                     u.push_token,
-                    self.user.name or "Новое сообщение",
+                    self.user.display_name,  # ФИО отправителя в заголовке
                     text,
                     {"chatId": self.chat_id},
                 )

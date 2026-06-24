@@ -85,7 +85,12 @@ class ChatViewSet(viewsets.ModelViewSet):
 
         for u in chat.participants.exclude(id=request.user.id):
             if u.push_token:
-                send_push(u.push_token, request.user.name or "Новое сообщение", text, {"chatId": chat.id})
+                send_push(
+                    u.push_token,
+                    request.user.display_name,  # ФИО отправителя в заголовке
+                    text,
+                    {"chatId": chat.id},
+                )
 
         return Response(data, status=status.HTTP_201_CREATED)
 
