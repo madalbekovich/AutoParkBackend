@@ -102,11 +102,22 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-# Channel layer для realtime-чата. В dev — in-memory (один процесс).
-# Для прода заменить на channels_redis (RedisChannelLayer).
-CHANNEL_LAYERS = {
-    "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
-}
+# Channel layer для realtime-чата.
+# ВАЖНО: API (gunicorn) и WebSocket (daphne) — РАЗНЫЕ процессы. Чтобы broadcast
+# из REST-вью доходил до WS-консьюмеров (и наоборот), нужен ОБЩИЙ слой — Redis.
+# In-memory работает только внутри одного процесса (локальный runserver).
+REDIS_URL = os.environ.get("REDIS_URL")
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {"hosts": [REDIS_URL]},
+        },
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
+    }
 
 
 # Database — Postgres (с фолбэком на SQLite, если USE_SQLITE=1).

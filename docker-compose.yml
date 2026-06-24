@@ -18,6 +18,16 @@ services:
       timeout: 5s
       retries: 5
 
+  # Redis — общий channel layer для realtime-чата (связывает web и ws процессы).
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # API (HTTP) — Gunicorn (WSGI). Синхронные DRF-вьюхи.
   web:
     build: .
@@ -26,10 +36,13 @@ services:
     env_file: .env
     environment:
       DB_HOST: db
+      REDIS_URL: redis://redis:6379/0
     volumes:
       - static_volume:/app/staticfiles
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     expose:
       - "8000"
@@ -42,8 +55,11 @@ services:
     env_file: .env
     environment:
       DB_HOST: db
+      REDIS_URL: redis://redis:6379/0
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     expose:
       - "9000"
