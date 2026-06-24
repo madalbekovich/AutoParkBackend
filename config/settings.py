@@ -110,7 +110,10 @@ REDIS_URL = os.environ.get("REDIS_URL")
 if REDIS_URL:
     CHANNEL_LAYERS = {
         "default": {
-            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            # PubSub-слой надёжнее для долгоживущих WS-соединений: не использует
+            # блокирующее чтение с таймаутом (из-за него ловили "Timeout reading
+            # from redis" на простаивающих чатах). Доставка broadcast — мгновенная.
+            "BACKEND": "channels_redis.pubsub.RedisPubSubChannelLayer",
             "CONFIG": {"hosts": [REDIS_URL]},
         },
     }
